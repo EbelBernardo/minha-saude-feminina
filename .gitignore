@@ -1,0 +1,58 @@
+﻿## ======================
+## .NET / ASP.NET Core
+## ======================
+
+# Build & bin/obj
+bin/
+obj/
+[Bb]uild/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Configs sensíveis
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.secrets.json
+
+# Mantém o appsettings principal versionado
+!appsettings.json
+
+# Entity Framework / Migrations
+# Se você não quer commitar migrations, descomente a linha abaixo
+# Migrations/
+
+# Pacotes NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# Testes e cobertura
+*.trx
+*.coverage
+*.coveragexml
+TestResult.xml
+coverage*.json
+coverage*.xml
+
+# Docker
+docker-compose.override.yml
+.docker/
+**/docker-compose.*.yml
+**/Dockerfile.*
+
+# Outros
+*.env
+*.env.*

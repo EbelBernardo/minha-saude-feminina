@@ -1,0 +1,6 @@
+@MinhaSaudeFeminina_HostAddress = http://localhost:5287
+
+GET {{MinhaSaudeFeminina_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
