@@ -56,3 +56,6 @@ docker-compose.override.yml
 # Outros
 *.env
 *.env.*
+
+*.http
+Properties/launchSettings.json
