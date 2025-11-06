@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MinhaSaudeFeminina.DTOs.Common;
+using System.ComponentModel.DataAnnotations;
 
 namespace MinhaSaudeFeminina.DTOs.Symptoms
 {
-    public class SymptomRegisterDto
+    public class SymptomRegisterDto : IHaveTitleAndTagsDto
     {
         [Required(ErrorMessage = "O título é obrigatório.")]
         [MaxLength(100, ErrorMessage = "O título não pode ter mais de 100 caracteres")]

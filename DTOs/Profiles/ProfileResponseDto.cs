@@ -1,4 +1,4 @@
-﻿using MinhaSaudeFeminina.DTOs.Users;
+﻿using MinhaSaudeFeminina.Models.User;
 using MinhaSaudeFeminina.Models.UserProfile;
 
 namespace MinhaSaudeFeminina.DTOs.Profiles
@@ -11,6 +11,12 @@ namespace MinhaSaudeFeminina.DTOs.Profiles
         public bool Term { get; set; }
 
         public int UserId { get; set; }
-        public UserResponseDto? User { get; set; }
+        public ApplicationUser? User { get; set; }
+        //UserResponseDto
+
+        public List<string> Genders { get; set; } = new();
+        public List<string> Statuses { get; set; } = new();
+        public List<string> Objectives { get; set; } = new();
+        public List<string> Symptoms { get; set; } = new();
     }
 }

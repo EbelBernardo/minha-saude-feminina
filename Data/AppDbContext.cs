@@ -60,13 +60,13 @@ namespace MinhaSaudeFeminina.Data
                 .HasOne(pg => pg.Profile)
                 .WithMany(p => p.ProfileGenders)
                 .HasForeignKey(pg => pg.ProfileId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProfileGender>()
                 .HasOne(pg => pg.Gender)
                 .WithMany(p => p.ProfileGenders)
                 .HasForeignKey(pg => pg.GenderId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
 
             // ProfileObjective
@@ -78,13 +78,13 @@ namespace MinhaSaudeFeminina.Data
                 .HasOne(po => po.Profile)
                 .WithMany(p => p.ProfileObjectives)
                 .HasForeignKey(po => po.ProfileId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProfileObjective>()
                 .HasOne(po => po.Objective)
                 .WithMany(p => p.ProfileObjectives)
                 .HasForeignKey(po => po.ObjectiveId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
 
             // ProfileStatus
@@ -96,13 +96,13 @@ namespace MinhaSaudeFeminina.Data
                 .HasOne(ps => ps.Profile)
                 .WithMany(p => p.ProfileStatuses)
                 .HasForeignKey(ps => ps.ProfileId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProfileStatus>()
                 .HasOne(ps => ps.Status)
                 .WithMany(p => p.ProfileStatuses)
                 .HasForeignKey(ps => ps.StatusId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
 
             // ProfileSymptom
@@ -114,13 +114,13 @@ namespace MinhaSaudeFeminina.Data
                 .HasOne(ps => ps.Profile)
                 .WithMany(p => p.ProfileSymptoms)
                 .HasForeignKey(ps => ps.ProfileId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProfileSymptom>()
                 .HasOne(ps => ps.Symptom)
                 .WithMany(p => p.ProfileSymptoms)
                 .HasForeignKey(ps => ps.SymptomId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
 
             // Tag Relations

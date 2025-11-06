@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MinhaSaudeFeminina.Data;
 using MinhaSaudeFeminina.Services.Interfaces;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 namespace MinhaSaudeFeminina.Services.Base
@@ -20,6 +21,11 @@ namespace MinhaSaudeFeminina.Services.Base
 
         public virtual async Task<List<T>> GetAllAsync()
             => await _context.Set<T>().ToListAsync();
+
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _context.Set<T>().AnyAsync(predicate);
+        }
 
         public virtual async Task<T> CreateAsync(T entity)
         {

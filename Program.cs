@@ -1,11 +1,18 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MinhaSaudeFeminina.Data;
+using MinhaSaudeFeminina.DTOs.Common;
 using MinhaSaudeFeminina.Mappings;
+using MinhaSaudeFeminina.Middlewares;
 using MinhaSaudeFeminina.Models.User;
 using MinhaSaudeFeminina.Services;
+using MinhaSaudeFeminina.Validators;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,10 +23,40 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// --- FluentValidation ---
+builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(e => e.Value?.Errors.Count > 0)
+            .SelectMany(kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage))
+            .ToList();
+
+        return new BadRequestObjectResult(new
+        {
+            success = false,
+            message = "Falha na validação de dados.",
+            errors
+        });
+    };
+});
+
 // --- Identity ---
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
 
 // --- JWT ---
 var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
@@ -39,7 +76,11 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(key)
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+
+        // Essencial para que o Identity pegue o Id numérico do usuário
+        NameClaimType = ClaimTypes.NameIdentifier,
+        RoleClaimType = ClaimTypes.Role
     };
 });
 
@@ -47,16 +88,13 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
-builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<GenderService>();
 builder.Services.AddScoped<ObjectiveService>();
 builder.Services.AddScoped<StatusService>();
 builder.Services.AddScoped<SymptomService>();
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddScoped<UserService>();
 
 builder.Services.AddEndpointsApiExplorer(); // Necessário para Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -94,6 +132,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

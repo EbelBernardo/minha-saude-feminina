@@ -12,8 +12,8 @@ using MinhaSaudeFeminina.Data;
 namespace MinhaSaudeFeminina.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250929194413_Inicial")]
-    partial class Inicial
+    [Migration("20251105183541_AddCascadeCatalogRelations")]
+    partial class AddCascadeCatalogRelations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -429,7 +429,9 @@ namespace MinhaSaudeFeminina.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -591,13 +593,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Gender", "Gender")
                         .WithMany("ProfileGenders")
                         .HasForeignKey("GenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileGenders")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Gender");
@@ -610,13 +612,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Objective", "Objective")
                         .WithMany("ProfileObjectives")
                         .HasForeignKey("ObjectiveId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileObjectives")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Objective");
@@ -629,13 +631,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileStatuses")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Status", "Status")
                         .WithMany("ProfileStatuses")
                         .HasForeignKey("StatusId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Profile");
@@ -648,13 +650,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileSymptoms")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Symptom", "Symptom")
                         .WithMany("ProfileSymptoms")
                         .HasForeignKey("SymptomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Profile");

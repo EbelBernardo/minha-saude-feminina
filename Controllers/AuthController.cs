@@ -1,11 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using MinhaSaudeFeminina.DTOs.UserAuth;
 using MinhaSaudeFeminina.Models.User;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using MinhaSaudeFeminina.Services;
 
 namespace MinhaSaudeFeminina.Controllers
 {
@@ -13,82 +11,55 @@ namespace MinhaSaudeFeminina.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<IdentityRole<int>> _roleManager;
-        private readonly IConfiguration _configuration;
+        private readonly UserService _userService;
 
-        public AuthController(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
-            RoleManager<IdentityRole<int>> roleManager,
-            IConfiguration configuration)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _roleManager = roleManager;
-            _configuration = configuration;
-        }
+        public AuthController(UserService userService)
+            => _userService = userService;
 
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(int id)
+            => Ok(await _userService.GetAsync(id, User));
+
+        [Authorize (Roles = "Admin")]
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+            => Ok(await _userService.GetAllAsync());
+
+        [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterUserDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
         {
-            var user = new ApplicationUser
-            {
-                UserName = dto.Email,
-                Email = dto.Email,
-                FullName = dto.FullName
-            };
-
-            var result = await _userManager.CreateAsync(user, dto.Password);
-            if(!result.Succeeded) return BadRequest(result.Errors);
-
-            await _userManager.AddToRoleAsync(user, "User");
-
-            return Ok("Usuário registrado com sucesso.");
+            var result =  await _userService.RegisterUserAsync(dto);
+            return CreatedAtAction(nameof(Get), new { id = result.Data!.Id}, result);
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginUserDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginUserDto dto)
+            => Ok(await _userService.LoginAsync(dto));
+
+        [Authorize]
+        [HttpPut("update-email")]
+        public async Task<IActionResult> UpdateEmail([FromBody] UpdateEmailDto dto)
+            => Ok(await _userService.UpdateEmailAsync(dto, User));
+
+        [Authorize]
+        [HttpPut("update-fullname")]
+        public async Task<IActionResult> UpdateFullName([FromBody] UpdateFullNameDto dto)
+            => Ok(await _userService.UpdateFullNameAsync(dto, User));
+
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+            => Ok(await _userService.ChangePasswordAsync(dto, User));
+
+        [HttpDelete("{id}")]
+        [Authorize (Roles = "Admin")]
+        public async Task<IActionResult> DeleteAccount(int id)
         {
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-            if(user == null) return Unauthorized("Credenciais inválidas.");
-
-            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
-            if(!result.Succeeded) return Unauthorized("Credenciais inválidas.");
-
-            return Ok(await GenerateJwtToken(user));
-        }
-
-        private async Task<AuthResponseDto> GenerateJwtToken(ApplicationUser user)
-        {
-            var userRoles = await _userManager.GetRolesAsync(user);
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim("id", user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: creds
-            );
-
-            return new AuthResponseDto
-            {
-                Token = new JwtSecurityTokenHandler().WriteToken(token),
-                Expiration = token.ValidTo
-            };
+            await _userService.DeleteAsync(id, User);
+            return NoContent();
         }
     }
 }

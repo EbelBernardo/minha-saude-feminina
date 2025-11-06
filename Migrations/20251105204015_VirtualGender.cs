@@ -5,7 +5,7 @@
 namespace MinhaSaudeFeminina.Migrations
 {
     /// <inheritdoc />
-    public partial class Inicial : Migration
+    public partial class VirtualGender : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

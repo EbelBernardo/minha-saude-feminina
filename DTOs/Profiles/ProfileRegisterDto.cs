@@ -1,6 +1,10 @@
 ﻿using MinhaSaudeFeminina.Models.Catalogs;
 using MyGender = MinhaSaudeFeminina.Models.Catalogs.Gender;
 using System.ComponentModel.DataAnnotations;
+using MinhaSaudeFeminina.DTOs.Objectives;
+using MinhaSaudeFeminina.DTOs.Statuses;
+using MinhaSaudeFeminina.DTOs.Symptoms;
+using MinhaSaudeFeminina.DTOs.Gender;
 
 namespace MinhaSaudeFeminina.DTOs.Profiles
 {
@@ -13,9 +17,13 @@ namespace MinhaSaudeFeminina.DTOs.Profiles
         [Required(ErrorMessage = "O termo de consentimento é obrigatório")]
         public bool Term { get; set; }
 
-        //public List<MyGender>? Genders { get; set; }
-        //public List<Objective>? Objectives { get; set; }
-        //public List<Status>? Statuses { get; set; }
-        //public List<Symptom>? Symtoms { get; set; }
+        public List<string> Genders { get; set; } = new();
+
+        public List<string> Objectives { get; set; } = new();
+
+        public List<string> Statuses { get; set; } = new();
+
+        public List<string> Symptoms { get; set; } = new();
+
     }
 }

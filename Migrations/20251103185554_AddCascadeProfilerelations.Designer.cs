@@ -12,8 +12,8 @@ using MinhaSaudeFeminina.Data;
 namespace MinhaSaudeFeminina.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250916194532_AddProfileToApplicationUser")]
-    partial class AddProfileToApplicationUser
+    [Migration("20251103185554_AddCascadeProfilerelations")]
+    partial class AddCascadeProfilerelations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -429,7 +429,9 @@ namespace MinhaSaudeFeminina.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -597,7 +599,7 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileGenders")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Gender");
@@ -616,7 +618,7 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileObjectives")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Objective");
@@ -629,7 +631,7 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileStatuses")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Status", "Status")
@@ -648,7 +650,7 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileSymptoms")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Symptom", "Symptom")

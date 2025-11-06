@@ -12,8 +12,8 @@ using MinhaSaudeFeminina.Data;
 namespace MinhaSaudeFeminina.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250916190916_AddingAuthModels")]
-    partial class AddingAuthModels
+    [Migration("20251105204015_VirtualGender")]
+    partial class VirtualGender
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -429,7 +429,9 @@ namespace MinhaSaudeFeminina.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -500,29 +502,6 @@ namespace MinhaSaudeFeminina.Migrations
                         .IsUnique();
 
                     b.ToTable("Profiles");
-                });
-
-            modelBuilder.Entity("MinhaSaudeFeminina.Models.UserProfile.User", b =>
-                {
-                    b.Property<int>("UserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -614,13 +593,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Gender", "Gender")
                         .WithMany("ProfileGenders")
                         .HasForeignKey("GenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileGenders")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Gender");
@@ -633,13 +612,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Objective", "Objective")
                         .WithMany("ProfileObjectives")
                         .HasForeignKey("ObjectiveId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileObjectives")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Objective");
@@ -652,13 +631,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileStatuses")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Status", "Status")
                         .WithMany("ProfileStatuses")
                         .HasForeignKey("StatusId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Profile");
@@ -671,13 +650,13 @@ namespace MinhaSaudeFeminina.Migrations
                     b.HasOne("MinhaSaudeFeminina.Models.UserProfile.Profile", "Profile")
                         .WithMany("ProfileSymptoms")
                         .HasForeignKey("ProfileId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MinhaSaudeFeminina.Models.Catalogs.Symptom", "Symptom")
                         .WithMany("ProfileSymptoms")
                         .HasForeignKey("SymptomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Profile");
@@ -763,7 +742,7 @@ namespace MinhaSaudeFeminina.Migrations
 
             modelBuilder.Entity("MinhaSaudeFeminina.Models.UserProfile.Profile", b =>
                 {
-                    b.HasOne("MinhaSaudeFeminina.Models.UserProfile.User", "User")
+                    b.HasOne("MinhaSaudeFeminina.Models.User.ApplicationUser", "User")
                         .WithOne("Profile")
                         .HasForeignKey("MinhaSaudeFeminina.Models.UserProfile.Profile", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -805,6 +784,11 @@ namespace MinhaSaudeFeminina.Migrations
                     b.Navigation("TagSymptoms");
                 });
 
+            modelBuilder.Entity("MinhaSaudeFeminina.Models.User.ApplicationUser", b =>
+                {
+                    b.Navigation("Profile");
+                });
+
             modelBuilder.Entity("MinhaSaudeFeminina.Models.UserProfile.Profile", b =>
                 {
                     b.Navigation("ProfileGenders");
@@ -814,11 +798,6 @@ namespace MinhaSaudeFeminina.Migrations
                     b.Navigation("ProfileStatuses");
 
                     b.Navigation("ProfileSymptoms");
-                });
-
-            modelBuilder.Entity("MinhaSaudeFeminina.Models.UserProfile.User", b =>
-                {
-                    b.Navigation("Profile");
                 });
 #pragma warning restore 612, 618
         }

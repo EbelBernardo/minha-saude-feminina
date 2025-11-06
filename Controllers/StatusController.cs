@@ -19,69 +19,29 @@ namespace MinhaSaudeFeminina.Controllers
         [Authorize(Roles = "User, Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _service.GetAsync(id);
-            if (result == null)
-                return NotFound(new { Message = "Status não encontrado." });
-
-            return Ok(result);
-        }
+            => Ok(await _service.GetAsync(id));
 
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _service.GetAllAsync();
-            if (!result.Any())
-                return NotFound(new { Message = "Nenhum status encontrado." });
-
-            return Ok(result);
-        }
+            => Ok(await _service.GetAllDtosAsync());
 
         [Authorize(Roles = "Admin")]
         [HttpPost("register")]
         public async Task<IActionResult> Create([FromBody] StatusRegisterDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var created = await _service.CreateAsync(dto);
-
-            return CreatedAtAction(nameof(Get), new {id = created.StatusId}, created);
+            return CreatedAtAction(nameof(Get), new {id = created.Data!.StatusId}, created);
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] StatusRegisterDto dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var updated = await _service.UpdateAsync(id, dto);
-            if (updated == null)
-                return NotFound(new { message = "Status não encontrado" });
-
-            return Ok(updated);
-        }
+            => Ok(await _service.UpdateAsync(id, dto));
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _service.DeleteAsync(id);
-            if (!result)
-                return NotFound(new { Message = "Status não encontrado." });
-
-            return Ok($"Status deletado com sucesso.");
-        }
+            => Ok(await _service.RemoveAsync(id));
     }
 }

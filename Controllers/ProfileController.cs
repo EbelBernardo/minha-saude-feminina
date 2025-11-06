@@ -5,6 +5,7 @@ using MinhaSaudeFeminina.DTOs;
 using MinhaSaudeFeminina.DTOs.Profiles;
 using MinhaSaudeFeminina.Models.UserProfile;
 using MinhaSaudeFeminina.Services;
+using System.Security.Claims;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MinhaSaudeFeminina.Controllers
@@ -24,15 +25,10 @@ namespace MinhaSaudeFeminina.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var profile = await _service.GetAsync(id);
-            if (profile == null)
-                return NotFound(new { Message = "Perfil não encontrado." });
 
-            var userId = int.Parse(User.FindFirst("id")!.Value);
-            if (!User.IsInRole("Admin") && profile.UserId != userId)
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            if (!User.IsInRole("Admin") && profile.Data!.UserId != userId)
                 return Forbid();
 
             return Ok(profile);
@@ -41,68 +37,43 @@ namespace MinhaSaudeFeminina.Controllers
         [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
-        {
-            var profiles = await _service.GetAllAsync();
-            if (profiles == null)
-                return NotFound(new { Message = "Nenhum perfil encontrado." });
-
-            return Ok(profiles);
-        }
+            => Ok(await _service.GetAllDtosAsync());
 
         [Authorize(Roles = "User, Admin")]
         [HttpPost("register")]
         public async Task<IActionResult> Create([FromBody] ProfileRegisterDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var userId = int.Parse(User.FindFirst("id")!.Value);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
             var created = await _service.CreateAsync(dto, userId);
 
-            return CreatedAtAction(nameof(Get), new { id = created.ProfileId }, created);
+            return CreatedAtAction(nameof(Get), new { id = created.Data!.ProfileId }, created);
         }
 
         [Authorize(Roles = "User, Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ProfileRegisterDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var profile = await _service.GetAsync(id);
-            if (profile == null)
-                return NotFound(new { Message = "Perfil não encontrado." });
 
-            var userId = int.Parse(User.FindFirst("id")!.Value);
-            if (!User.IsInRole("Admin") && profile.UserId != userId)
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            if (!User.IsInRole("Admin") && profile.Data!.UserId != userId)
                 return Forbid();
 
-            var updated = await _service.UpdateAsync(id, dto);
-
-            return Ok(updated);
+            return Ok(await _service.UpdateAsync(id, dto));
         }
 
         [Authorize(Roles = "User, Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var profile = await _service.GetAsync(id);
-            if (profile == null)
-                return NotFound(new { Message = "Perfil não encontrado." });
 
-            var userId = int.Parse(User.FindFirst("id")!.Value);
-            if (!User.IsInRole("Admin") && profile.UserId != userId)
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            if (!User.IsInRole("Admin") && profile.Data!.UserId != userId)
                 return Forbid();
 
-            var delete = await _service.DeleteAsync(id);
-            if (!delete)
-                return NotFound(new { Message = "Perfil não encontrado." });
-
-            return Ok("Perfil deletado");
+            return Ok(await _service.RemoveAsync(id));
         }
     }
 }
