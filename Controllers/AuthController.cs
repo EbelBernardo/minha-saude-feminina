@@ -12,9 +12,13 @@ namespace MinhaSaudeFeminina.Controllers
     public class AuthController : ControllerBase
     {
         private readonly UserService _userService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public AuthController(UserService userService)
-            => _userService = userService;
+        public AuthController(UserService userService, UserManager<ApplicationUser> userManager)
+        {
+            _userService = userService;
+            _userManager = userManager;
+        }
 
         [Authorize]
         [HttpGet("{id}")]
@@ -32,6 +36,27 @@ namespace MinhaSaudeFeminina.Controllers
         {
             var result =  await _userService.RegisterUserAsync(dto);
             return CreatedAtAction(nameof(Get), new { id = result.Data!.Id}, result);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string userId, [FromQuery] string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound("Usuário não encontrado.");
+
+            var decodedToken = Uri.UnescapeDataString(token);
+
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+            if (!result.Succeeded)
+                return BadRequest("Token inválido ou expirado.");
+
+            return Ok(new
+            {
+                Success = true,
+                Message = "E-mail confirmado com sucesso!"
+            });
         }
 
         [AllowAnonymous]

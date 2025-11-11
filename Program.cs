@@ -27,6 +27,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromMinutes(15);
+});
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -145,6 +151,9 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty; // Para abrir no root "/"
     });
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

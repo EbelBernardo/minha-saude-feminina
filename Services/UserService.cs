@@ -9,6 +9,7 @@ using MinhaSaudeFeminina.DTOs.UserAuth;
 using MinhaSaudeFeminina.Exceptions;
 using MinhaSaudeFeminina.Models.User;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using ValidationException = MinhaSaudeFeminina.Exceptions.ValidationException;
@@ -26,6 +27,7 @@ namespace MinhaSaudeFeminina.Services
         private readonly IValidator<UpdateEmailDto> _updateEmailValidator;
         private readonly IValidator<UpdateFullNameDto> _updateNameValidator;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
 
         public UserService(
@@ -38,6 +40,7 @@ namespace MinhaSaudeFeminina.Services
             IValidator<UpdateEmailDto> updateEmailValidator,
             IValidator<UpdateFullNameDto> updateNameValidator,
             SignInManager<ApplicationUser> signInManager,
+            IEmailService emailService,
             IConfiguration configuration)
         {
             _userManager = userManager;
@@ -48,6 +51,7 @@ namespace MinhaSaudeFeminina.Services
             _updateEmailValidator = updateEmailValidator;
             _updateNameValidator = updateNameValidator;
             _changePasswordValidator = changePasswordValidator;
+            _emailService = emailService;
             _configuration = configuration;
             _signInManager = signInManager;
         }
@@ -83,10 +87,25 @@ namespace MinhaSaudeFeminina.Services
 
             await _userManager.AddToRoleAsync(user, "User");
 
+            // Gera o token de confirmação de e-mail
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var encodedToken = Uri.EscapeDataString(token);
+            var frontendUrl = _configuration["App:FrontendUrl"];
+            var confirmUrl = $"{frontendUrl}/confirm-email?userId={user.Id}&token={encodedToken}";
+
+            // Envia o e-mail
+            var message = $@"
+                <h3>Bem-vindo(a) ao Minha Saúde Feminina!</h3>
+                <p>Para ativar sua conta, confirme seu e-mail clicando no link abaixo:</p>
+                <a href='{confirmUrl}'>Confirmar e-mail</a>
+                <p>Se você não criou esta conta, ignore esta mensagem.</p>";
+
+            await _emailService.SendEmailAsync(user.Email!, "Confirmação de E-mail", message);
+
             return new ApiResponse<ResponseUserDto>
             {
                 Success = true,
-                Message = "Usuário criado com sucesso!",
+                Message = "Usuário criado com sucesso! Verifique seu e-mail para confirmar sua conta.",
                 Data = _mapper.Map<ResponseUserDto>(user)
             };
         }
@@ -101,6 +120,10 @@ namespace MinhaSaudeFeminina.Services
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if(user == null)
                 throw new IdentityException(new[] { "Credenciais inválidas." });
+
+            // Verifica se o e-mail foi confirmado
+            if (!user.EmailConfirmed)
+                throw new IdentityException(new[] { "E-mail ainda não confirmado. Verifique sua caixa de entrada." });
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if(!result.Succeeded)

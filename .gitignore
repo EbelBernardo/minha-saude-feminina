@@ -22,18 +22,12 @@ obj/
 *.swp
 
 # Configs sensíveis
-appsettings.Development.json
-appsettings.Local.json
-appsettings.*.secrets.json
-appsettings.json
-appsettings.*.json
-
-# Mantém o appsettings principal versionado
+appsettings*.json
 !appsettings.json
 
 # Entity Framework / Migrations
 # Se você não quer commitar migrations, descomente a linha abaixo
-# Migrations/
+Migrations/
 
 # Pacotes NuGet
 *.nupkg
