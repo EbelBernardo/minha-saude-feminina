@@ -19,6 +19,7 @@ namespace MinhaSaudeFeminina.Data
         // User
         //public DbSet<User> Users { get; set; } = null!;
         public DbSet<Profile> Profiles { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         //Catalogs
         public DbSet<Gender> Genders { get; set; } = null!;

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MinhaSaudeFeminina.Data;
 using MinhaSaudeFeminina.DTOs.Responses;
 using MinhaSaudeFeminina.DTOs.UserAuth;
 using MinhaSaudeFeminina.Exceptions;
@@ -11,6 +12,7 @@ using MinhaSaudeFeminina.Models.User;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using ValidationException = MinhaSaudeFeminina.Exceptions.ValidationException;
 
@@ -29,6 +31,7 @@ namespace MinhaSaudeFeminina.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly AppDbContext _context;
 
         public UserService(
             UserManager<ApplicationUser> userManager, 
@@ -41,7 +44,8 @@ namespace MinhaSaudeFeminina.Services
             IValidator<UpdateFullNameDto> updateNameValidator,
             SignInManager<ApplicationUser> signInManager,
             IEmailService emailService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            AppDbContext context)
         {
             _userManager = userManager;
             _mapper = mapper;
@@ -54,6 +58,7 @@ namespace MinhaSaudeFeminina.Services
             _emailService = emailService;
             _configuration = configuration;
             _signInManager = signInManager;
+            _context = context;
         }
 
         public async Task<ApiResponse<ResponseUserDto>> RegisterUserAsync(RegisterUserDto dto)
@@ -87,20 +92,20 @@ namespace MinhaSaudeFeminina.Services
 
             await _userManager.AddToRoleAsync(user, "User");
 
-            // Gera o token de confirmação de e-mail
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-            var encodedToken = Uri.EscapeDataString(token);
-            var frontendUrl = _configuration["App:FrontendUrl"];
-            var confirmUrl = $"{frontendUrl}/confirm-email?userId={user.Id}&token={encodedToken}";
+            //// Gera o token de confirmação de e-mail
+            //var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            //var encodedToken = Uri.EscapeDataString(token);
+            //var frontendUrl = _configuration["App:FrontendUrl"];
+            //var confirmUrl = $"{frontendUrl}/confirm-email?userId={user.Id}&token={encodedToken}";
 
-            // Envia o e-mail
-            var message = $@"
-                <h3>Bem-vindo(a) ao Minha Saúde Feminina!</h3>
-                <p>Para ativar sua conta, confirme seu e-mail clicando no link abaixo:</p>
-                <a href='{confirmUrl}'>Confirmar e-mail</a>
-                <p>Se você não criou esta conta, ignore esta mensagem.</p>";
+            //// Envia o e-mail
+            //var message = $@"
+            //    <h3>Bem-vindo(a) ao Minha Saúde Feminina!</h3>
+            //    <p>Para ativar sua conta, confirme seu e-mail clicando no link abaixo:</p>
+            //    <a href='{confirmUrl}'>Confirmar e-mail</a>
+            //    <p>Se você não criou esta conta, ignore esta mensagem.</p>";
 
-            await _emailService.SendEmailAsync(user.Email!, "Confirmação de E-mail", message);
+            //await _emailService.SendEmailAsync(user.Email!, "Confirmação de E-mail", message);
 
             return new ApiResponse<ResponseUserDto>
             {
@@ -121,15 +126,35 @@ namespace MinhaSaudeFeminina.Services
             if(user == null)
                 throw new IdentityException(new[] { "Credenciais inválidas." });
 
-            // Verifica se o e-mail foi confirmado
-            if (!user.EmailConfirmed)
-                throw new IdentityException(new[] { "E-mail ainda não confirmado. Verifique sua caixa de entrada." });
+            //// Verifica se o e-mail foi confirmado
+            //if (!user.EmailConfirmed)
+            //    throw new IdentityException(new[] { "E-mail ainda não confirmado. Verifique sua caixa de entrada." });
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
-            if(!result.Succeeded)
-                throw new IdentityException(new[] { "Credenciais inválidas." });
+            if (await _userManager.IsLockedOutAsync(user))
+                throw new IdentityException(new[] { "Conta temporariamente bloqueada por várias tentativas inválidas. Tente novamente mais tarde." });
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
+            if (result.IsLockedOut)
+                throw new IdentityException(new[] { "Conta temporariamente bloqueada por várias tentativas inválidas. Tente novamente mais tarde." });
+
+            if (!result.Succeeded)
+            {
+                var accessFailedCount = await _userManager.GetAccessFailedCountAsync(user);
+                var remainingAttempts = 5 - accessFailedCount;
+
+                string message = remainingAttempts switch
+                {
+                    2 => "Credenciais inválidas. Atenção: Restam apenas 2 tentativas antes do bloqueio da conta.",
+                    1 => "Credenciais inválidas. Atenção: Restam apenas 1 tentativa antes do bloqueio da conta.",
+                    _ => "Credenciais inválidas."
+                };
+            
+                throw new IdentityException(new[] { message });
+            }
 
             var token = await GenerateJwtTokenAsync(user);
+
+            await _userManager.ResetAccessFailedCountAsync(user);
 
             return new ApiResponse<AuthResponseDto>
             {
@@ -227,9 +252,19 @@ namespace MinhaSaudeFeminina.Services
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
+                expires: DateTime.UtcNow.AddMinutes(30),
                 signingCredentials: creds
             );
+
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                ExpiresAt = DateTime.UtcNow.AddDays(60),
+                UserId = user.Id
+            };
+
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
 
             return new ApiResponse<AuthResponseDto>
             {
@@ -238,8 +273,45 @@ namespace MinhaSaudeFeminina.Services
                 Data = new AuthResponseDto
                 { 
                     Token = new JwtSecurityTokenHandler().WriteToken(token),
+                    RefreshToken = refreshToken.Token,
                     Expiration = token.ValidTo.ToLocalTime()
                 }
+            };
+        }
+
+        public async Task<ApiResponse<AuthResponseDto>> RefreshTokenAsync(string refreshToken)
+        {
+            var tokenEntity = await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+            if (tokenEntity == null || !tokenEntity.IsActive)
+                throw new IdentityException(new[] { "Token inválido ou expirado" });
+
+            tokenEntity.RevokedAt = DateTime.UtcNow;
+
+            var newTokens = await GenerateJwtTokenAsync(tokenEntity.User);
+
+            await _context.SaveChangesAsync();
+
+            return newTokens;
+        }
+
+        public async Task<ApiResponse<object>> LogoutAsync(string refreshToken)
+        {
+            var tokenEntity = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+            if (tokenEntity == null || !tokenEntity.IsActive)
+                throw new IdentityException(new[] { "Refresh token inválido ou já expirado." });
+
+            tokenEntity.RevokedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Logout realizado com sucesso!"
             };
         }
 

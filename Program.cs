@@ -55,6 +55,10 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 // --- Identity ---
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
 {
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;

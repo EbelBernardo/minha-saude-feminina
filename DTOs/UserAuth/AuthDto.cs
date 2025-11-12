@@ -23,6 +23,8 @@
     {
         public string Token { get; set; } = string.Empty;
         public DateTime Expiration { get; set; }
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
     }
 
     public class UpdateEmailDto
@@ -45,5 +47,15 @@
     {
         public string CurrentPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class RefreshRequestDto
+    {
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+
+    public class LogoutRequestDto
+    {
+        public string RefreshToken { get; set; } = string.Empty;
     }
 }

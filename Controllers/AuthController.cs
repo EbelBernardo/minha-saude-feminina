@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MinhaSaudeFeminina.DTOs.UserAuth;
+using MinhaSaudeFeminina.Exceptions;
 using MinhaSaudeFeminina.Models.User;
 using MinhaSaudeFeminina.Services;
 
@@ -86,5 +88,13 @@ namespace MinhaSaudeFeminina.Controllers
             await _userService.DeleteAsync(id, User);
             return NoContent();
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto dto)
+            => Ok(await _userService.RefreshTokenAsync(dto.RefreshToken));
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequestDto dto)
+            => Ok(await _userService.LogoutAsync(dto.RefreshToken));
     }
 }
